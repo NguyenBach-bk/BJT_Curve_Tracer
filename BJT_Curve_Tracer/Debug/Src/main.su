@@ -1,0 +1,14 @@
+../Src/main.c:111:6:Draw_Menu_Line	72	static
+../Src/main.c:137:6:Draw_Menu_UI	32	static
+../Src/main.c:149:6:Draw_Prompt_Save_BG	24	static
+../Src/main.c:155:6:Draw_Prompt_Save_Buttons	40	static
+../Src/main.c:166:6:Draw_Prompt_InsertBJT2	24	static
+../Src/main.c:172:6:Delay_us	16	static
+../Src/main.c:178:10:Read_ADC_Channel_Averaged	40	static
+../Src/main.c:200:6:DrawLine	48	static
+../Src/main.c:223:6:USB_Send_String	24	static
+../Src/main.c:237:6:Measure_BJT	200	static
+../Src/main.c:342:6:Draw_Graph	168	static
+../Src/main.c:433:5:main	32	static
+../Src/main.c:611:6:SystemClock_Config	88	static
+../Src/main.c:657:6:Error_Handler	4	static,ignoring_inline_asm

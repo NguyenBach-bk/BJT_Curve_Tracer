@@ -1,0 +1,14 @@
+../Src/main.c:111:6:Draw_Menu_Line	8
+../Src/main.c:137:6:Draw_Menu_UI	2
+../Src/main.c:149:6:Draw_Prompt_Save_BG	1
+../Src/main.c:155:6:Draw_Prompt_Save_Buttons	3
+../Src/main.c:166:6:Draw_Prompt_InsertBJT2	1
+../Src/main.c:172:6:Delay_us	2
+../Src/main.c:178:10:Read_ADC_Channel_Averaged	2
+../Src/main.c:200:6:DrawLine	7
+../Src/main.c:223:6:USB_Send_String	3
+../Src/main.c:237:6:Measure_BJT	17
+../Src/main.c:342:6:Draw_Graph	27
+../Src/main.c:433:5:main	35
+../Src/main.c:611:6:SystemClock_Config	3
+../Src/main.c:657:6:Error_Handler	1

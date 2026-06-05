@@ -1,0 +1,10 @@
+13:37:10 **** Incremental Build of configuration Debug for project BJT_Curve_Tracer ****
+make -j12 all 
+arm-none-eabi-size  BJT_Curve_Tracer.elf 
+   text	   data	    bss	    dec	    hex	filename
+  62784	    736	  32056	  95576	  17558	BJT_Curve_Tracer.elf
+Finished building: default.size.stdout
+ 
+
+13:37:10 Build Finished. 0 errors, 0 warnings. (took 308ms)
+
