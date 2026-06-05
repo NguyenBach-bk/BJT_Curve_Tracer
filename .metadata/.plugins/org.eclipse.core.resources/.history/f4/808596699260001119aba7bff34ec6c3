@@ -30,8 +30,8 @@
 #include "spi.h"
 #include "tim.h"
 
-#include "usb_device.h"
 #include "usbd_cdc_if.h"
+#include "usb_device.h"
 #include <string.h>
 
 /* Private includes ----------------------------------------------------------*/
@@ -60,8 +60,7 @@
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
-void
-SystemClock_Config(void);
+void SystemClock_Config(void);
 
 /* USER CODE BEGIN PFP */
 
@@ -78,25 +77,24 @@ SystemClock_Config(void);
 #define GRAPH_W 320
 #define GRAPH_H 240
 
-typedef enum
-{
-  STATE_MENU,
-  STATE_SCANNING,
-  STATE_SHOW_GRAPH,
-  STATE_PROMPT_SAVE,
-  STATE_WAIT_BJT2,
-  STATE_SHOW_COMPARE
+typedef enum {
+	STATE_MENU,
+	STATE_SCANNING,
+	STATE_SHOW_GRAPH,
+	STATE_PROMPT_SAVE,
+	STATE_WAIT_BJT2,
+	STATE_SHOW_COMPARE
 } SystemState;
 
 SystemState current_state = STATE_MENU;
 
 // Các biến cấu hình từ Menu
-uint8_t cfg_is_pnp = 0;       // 0 = NPN, 1 = PNP
-float cfg_max_ib_uA = 100.0f; // Dòng Ib
-uint8_t cfg_num_steps = 5;    // Số đường đặc tuyến
+uint8_t cfg_is_pnp = 0;        // 0 = NPN, 1 = PNP
+float cfg_max_ib_uA = 100.0f;  // Dòng Ib
+uint8_t cfg_num_steps = 5;     // Số đường đặc tuyến
 float cfg_max_power = 0.1f;
-int menu_index = 0;            // Vị trí con trỏ Menu (0 đến 3)
-uint16_t last_encoder_val = 0; // Lưu giá trị Encoder cũ
+int menu_index = 0;             // Vị trí con trỏ Menu (0 đến 3)
+uint16_t last_encoder_val = 0;  // Lưu giá trị Encoder cũ
 
 // Biến toàn cục lưu dữ liệu so sánh 2 BJT
 float vce_data_1[10][100], ic_data_1[10][100];
@@ -110,9 +108,7 @@ uint8_t prompt_selection = 0; // 0 = No, 1 = Yes (Cho menu hỏi lưu đồ th�
 // 2. HÀM VẼ GIAO DIỆN MENU
 // ==========================================================
 
-void
-Draw_Menu_Line(int index, uint8_t is_selected)
-{
+void Draw_Menu_Line(int index, uint8_t is_selected) {
   char text[32];
 
   // Chuẩn bị nội dung text tuỳ theo index
@@ -138,9 +134,7 @@ Draw_Menu_Line(int index, uint8_t is_selected)
   ILI9341_WriteString(10, 75 + (index * 32), text, Font_11x18, txt_color, bg_color);
 }
 
-void
-Draw_Menu_UI(void)
-{
+void Draw_Menu_UI(void) {
   ILI9341_FillScreen(ILI9341_BLACK);
 
   // Tiêu đề
@@ -152,17 +146,13 @@ Draw_Menu_UI(void)
   }
 }
 
-void
-Draw_Prompt_Save_BG(void)
-{
+void Draw_Prompt_Save_BG(void) {
   // Chỉ vẽ khung xám và dòng chữ (gọi 1 lần duy nhất)
   ILI9341_FillRectangle(40, 80, 240, 100, ILI9341_COLOR565(30, 30, 30));
   ILI9341_WriteString(70, 95, "Save for compare?", Font_11x18, ILI9341_WHITE, ILI9341_COLOR565(30, 30, 30));
 }
 
-void
-Draw_Prompt_Save_Buttons(uint8_t is_yes)
-{
+void Draw_Prompt_Save_Buttons(uint8_t is_yes) {
   // Chỉ vẽ lại 2 cái nút (gọi khi vặn Encoder)
   uint16_t no_bg = (is_yes == 0) ? ILI9341_RED : ILI9341_BLACK;
   ILI9341_FillRectangle(60, 135, 80, 25, no_bg);
@@ -173,27 +163,20 @@ Draw_Prompt_Save_Buttons(uint8_t is_yes)
   ILI9341_WriteString(205, 140, "YES", Font_11x18, ILI9341_WHITE, yes_bg);
 }
 
-void
-Draw_Prompt_InsertBJT2(void)
-{
+void Draw_Prompt_InsertBJT2(void) {
   ILI9341_FillScreen(ILI9341_BLACK);
   ILI9341_WriteString(55, 100, "Insert New BJT...", Font_11x18, ILI9341_CYAN, ILI9341_BLACK);
   ILI9341_WriteString(55, 130, "Then Press Button!", Font_11x18, ILI9341_YELLOW, ILI9341_BLACK);
 }
 
-void
-Delay_us(uint16_t us)
-{
+void Delay_us(uint16_t us) {
   __HAL_TIM_SET_COUNTER(&htim6, 0);
-  while ((__HAL_TIM_GET_COUNTER(&htim6)) < us)
-    ;
+  while ((__HAL_TIM_GET_COUNTER(&htim6)) < us);
 }
 
 // Hàm đọc ADC với kỹ thuật Oversampling và Trung bình cộng
-uint16_t
-Read_ADC_Channel_Averaged(uint32_t Channel, uint16_t num_samples)
-{
-  ADC_ChannelConfTypeDef sConfig = { 0 };
+uint16_t Read_ADC_Channel_Averaged(uint32_t Channel, uint16_t num_samples) {
+  ADC_ChannelConfTypeDef sConfig = {0};
   sConfig.Channel = Channel;
   sConfig.Rank = 1;
 
@@ -202,7 +185,7 @@ Read_ADC_Channel_Averaged(uint32_t Channel, uint16_t num_samples)
   sConfig.SamplingTime = ADC_SAMPLETIME_84CYCLES;
   HAL_ADC_ConfigChannel(&hadc1, &sConfig);
 
-  uint32_t sum = 0; // Biến chứa tổng
+  uint32_t sum = 0;  // Biến chứa tổng
   for (uint16_t i = 0; i < num_samples; i++) {
     HAL_ADC_Start(&hadc1);
     HAL_ADC_PollForConversion(&hadc1, 10);
@@ -214,9 +197,7 @@ Read_ADC_Channel_Averaged(uint32_t Channel, uint16_t num_samples)
   return (uint16_t)(sum / num_samples);
 }
 
-void
-DrawLine(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1, uint16_t color)
-{
+void DrawLine(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1, uint16_t color) {
   int dx = abs(x1 - x0);
   int dy = abs(y1 - y0);
   int sx = (x0 < x1) ? 1 : -1;
@@ -225,8 +206,7 @@ DrawLine(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1, uint16_t color)
 
   while (1) {
     ILI9341_DrawPixel(x0, y0, color);
-    if (x0 == x1 && y0 == y1)
-      break;
+    if (x0 == x1 && y0 == y1) break;
     int e2 = 2 * err;
     if (e2 > -dy) {
       err -= dy;
@@ -240,28 +220,21 @@ DrawLine(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1, uint16_t color)
 }
 
 // Hàm gửi dữ liệu USB có Timeout chống treo MCU khi không cắm cáp
-void
-USB_Send_String(char* str)
-{
-  uint32_t start_time = HAL_GetTick();
+void USB_Send_String(char* str) {
+    uint32_t start_time = HAL_GetTick();
 
-  // Nếu USB bận thì chờ, nhưng hết timeout sẽ tự động thoát vòng lặp
-  while (CDC_Transmit_FS((uint8_t*)str, strlen(str)) == USBD_BUSY) {
-    if (HAL_GetTick() - start_time > 5) {
-      break;
+    // Nếu USB bận thì chờ, nhưng hết timeout sẽ tự động thoát vòng lặp
+    while (CDC_Transmit_FS((uint8_t*)str, strlen(str)) == USBD_BUSY) {
+        if (HAL_GetTick() - start_time > 5) {
+        	break;
+        }
     }
-  }
 }
 
 // ==============================================================================
 // HÀM CHÍNH: ĐO VÀ VẼ ĐỒ THỊ BJT
 // ==============================================================================
-// ==============================================================================
-// HÀM CHÍNH: ĐO VÀ VẼ ĐỒ THỊ BJT (ĐÃ NÂNG CẤP THUẬT TOÁN ĐO XUNG - PULSED MODE)
-// ==============================================================================
-void
-Measure_BJT(uint8_t is_PNP, float max_ib_uA, uint8_t num_steps, uint8_t bjt_index)
-{
+void Measure_BJT(uint8_t is_PNP, float max_ib_uA, uint8_t num_steps, uint8_t bjt_index) {
   int dac_direction = is_PNP ? -1 : 1;
   float ib_step_uA = max_ib_uA / (float)num_steps;
 
@@ -272,48 +245,30 @@ Measure_BJT(uint8_t is_PNP, float max_ib_uA, uint8_t num_steps, uint8_t bjt_inde
 
   // 1. Báo PC bắt đầu đo và yêu cầu xóa đồ thị cũ (Chỉ gửi khi đo BJT 1)
   if (bjt_index == 1) {
-    sprintf(tx_buf, "START\n");
-    USB_Send_String(tx_buf);
+      sprintf(tx_buf, "START\n");
+      USB_Send_String(tx_buf); // Đã thay thế vòng lặp while bằng hàm an toàn
   }
 
   for (int step = 0; step < num_steps; step++) {
-    // TÍNH TOÁN DÒNG IB MỤC TIÊU (CHƯA XUẤT RA DAC)
     float ib_target_uA = (step + 1) * ib_step_uA;
     float ib_target_A = ib_target_uA / 1000000.0f;
     float v_dac_i_volts = 1.65f + (dac_direction * ib_target_A * PUMP_RESISTOR);
     uint32_t dac2_val = (uint32_t)((v_dac_i_volts / 3.3f) * 4095.0f);
-    if (dac2_val > 4095)
-      dac2_val = 4095;
+    if (dac2_val > 4095) dac2_val = 4095;
+    HAL_DAC_SetValue(&hdac, DAC_CHANNEL_2, DAC_ALIGN_12B_R, dac2_val);
 
     for (int v_step = 0; v_step < 100; v_step++) {
-      // TÍNH TOÁN ÁP VCE MỤC TIÊU
       uint32_t delta_dac_v = v_step * 25;
       int32_t dac1_val = DAC_OFFSET + (dac_direction * delta_dac_v);
-      if (dac1_val > 4095)
-        dac1_val = 4095;
-      if (dac1_val < 0)
-        dac1_val = 0;
+      if (dac1_val > 4095) dac1_val = 4095;
+      if (dac1_val < 0) dac1_val = 0;
 
-      // ---------------------------------------------------------
-      // BƯỚC 1: BẬT XUNG (TON) -> BJT BẮT ĐẦU CHỊU TẢI
-      // ---------------------------------------------------------
-      HAL_DAC_SetValue(&hdac, DAC_CHANNEL_2, DAC_ALIGN_12B_R, dac2_val); // Bật Ib
-      HAL_DAC_SetValue(&hdac, DAC_CHANNEL_1, DAC_ALIGN_12B_R, dac1_val); // Bật Vce
-
-      Delay_us(200); // Chờ mạch phần cứng ổn định
+      HAL_DAC_SetValue(&hdac, DAC_CHANNEL_1, DAC_ALIGN_12B_R, dac1_val);
+      Delay_us(200);
 
       uint32_t adc_vc = Read_ADC_Channel_Averaged(ADC_CHANNEL_8, 64);
       uint32_t adc_ve = Read_ADC_Channel_Averaged(ADC_CHANNEL_9, 64);
 
-      // ---------------------------------------------------------
-      // BƯỚC 2: TẮT XUNG NGAY LẬP TỨC (TOFF) -> BJT NGỪNG TỎA NHIỆT
-      // ---------------------------------------------------------
-      HAL_DAC_SetValue(&hdac, DAC_CHANNEL_1, DAC_ALIGN_12B_R, DAC_OFFSET); // Đưa Vce về Mass ảo
-      HAL_DAC_SetValue(&hdac, DAC_CHANNEL_2, DAC_ALIGN_12B_R, DAC_OFFSET); // Đưa Ib về Mass ảo
-
-      // ---------------------------------------------------------
-      // BƯỚC 3: TÍNH TOÁN TRONG LÚC BJT ĐANG NGHỈ NGƠI
-      // ---------------------------------------------------------
       float v_adc_c = ((float)adc_vc / 4095.0f) * 3.3f;
       float v_adc_e = ((float)adc_ve / 4095.0f) * 3.3f;
 
@@ -323,11 +278,10 @@ Measure_BJT(uint8_t is_PNP, float max_ib_uA, uint8_t num_steps, uint8_t bjt_inde
       float vce_meas = fabs(v_c_phys - v_e_phys);
       float ic_meas = fabs(v_e_phys) / SHUNT_RESISTOR * 1000.0f;
 
-      if (ic_meas > current_max_ic)
-        current_max_ic = ic_meas;
+      if (ic_meas > current_max_ic) current_max_ic = ic_meas;
 
       if (v_step == 50) {
-        current_hfe = (ic_meas * 1000.0f) / ib_target_uA;
+          current_hfe = (ic_meas * 1000.0f) / ib_target_uA;
       }
 
       // Lưu vào mảng tương ứng để vẽ lên LCD nội bộ
@@ -339,46 +293,44 @@ Measure_BJT(uint8_t is_PNP, float max_ib_uA, uint8_t num_steps, uint8_t bjt_inde
         ic_data_2[step][v_step] = ic_meas;
       }
 
-      // Gửi tọa độ cho C#
+      // ----------------------------------------------------------------------
+      // 2. GỬI TỌA ĐỘ LÊN MÁY TÍNH (Cho phần mềm C# vẽ đồ thị loang ngay lập tức)
       sprintf(tx_buf, "DATA:%d,%d,%.3f,%.3f\n", bjt_index, step, vce_meas, ic_meas);
-      USB_Send_String(tx_buf);
+      USB_Send_String(tx_buf); // Đã thay thế vòng lặp while bằng hàm an toàn
+      // ----------------------------------------------------------------------
 
-      // ---------------------------------------------------------
-      // BƯỚC 4: BÙ TRỪ NHIỆT (DYNAMIC THERMAL DELAY)
-      // ---------------------------------------------------------
-      float current_power = vce_meas * (ic_meas / 1000.0f); // Công suất tức thời (W)
-
+      float current_power = vce_meas * (ic_meas / 1000.0f);
       if (current_power > cfg_max_power) {
-        float t_on_ms = 0.6f; // Tổng thời gian lệnh Delay_us(200) + Oversampling ADC
 
-        // Tính tổng thời gian cần nghỉ để giữ P_trung_bình = cfg_max_power
-        float required_t_off_ms = t_on_ms * ((current_power / cfg_max_power) - 1.0f);
-
-        // Trừ hao 0.4ms do MCU vừa tốn thời gian tính float và gửi USB ở bước 3
-        float dynamic_delay = required_t_off_ms - 0.4f;
-
-        // Nếu cần nghỉ > 1ms thì mới gọi hàm Delay của HAL
-        if (dynamic_delay > 1.0f) {
-          HAL_Delay((uint32_t)dynamic_delay);
+        if (current_hfe == 0 && v_step > 0) {
+            current_hfe = (ic_meas * 1000.0f) / ib_target_uA;
         }
+
+        for (int j = v_step; j < 100; j++) {
+            if (bjt_index == 1) {
+                vce_data_1[step][j] = vce_meas; ic_data_1[step][j] = ic_meas;
+            } else {
+                vce_data_2[step][j] = vce_meas; ic_data_2[step][j] = ic_meas;
+            }
+        }
+        break; // Nếu quá công suất thì ngắt quét (không vẽ phần còn lại)
       }
     }
   }
 
   // Chốt kết quả
   if (bjt_index == 1) {
-    max_ic_1 = current_max_ic;
-    hfe_1 = current_hfe;
+      max_ic_1 = current_max_ic; hfe_1 = current_hfe;
   } else {
-    max_ic_2 = current_max_ic;
-    hfe_2 = current_hfe;
+      max_ic_2 = current_max_ic; hfe_2 = current_hfe;
   }
 
-  // GỬI LỆNH DONE
+  // ----------------------------------------------------------------------
+  // 3. GỬI LỆNH DONE CHỐT HFE (Báo hiệu cho phần mềm C# biết đã quét xong 1 BJT)
   sprintf(tx_buf, "DONE:%d,%d\n", bjt_index, (int)current_hfe);
-  USB_Send_String(tx_buf);
+  USB_Send_String(tx_buf); // Đã thay thế vòng lặp while bằng hàm an toàn
+  // ----------------------------------------------------------------------
 
-  // Xả áp trước khi thoát
   HAL_DAC_SetValue(&hdac, DAC_CHANNEL_1, DAC_ALIGN_12B_R, DAC_OFFSET);
   HAL_DAC_SetValue(&hdac, DAC_CHANNEL_2, DAC_ALIGN_12B_R, DAC_OFFSET);
   HAL_Delay(200);
@@ -387,22 +339,18 @@ Measure_BJT(uint8_t is_PNP, float max_ib_uA, uint8_t num_steps, uint8_t bjt_inde
 // ==========================================================
 // HÀM CHUYÊN VẼ ĐỒ THỊ (Hỗ trợ vẽ 1 hoặc 2 BJT cùng lúc)
 // ==========================================================
-void
-Draw_Graph(uint8_t is_PNP, float max_ib_uA, uint8_t num_steps, uint8_t is_compare_mode)
-{
+void Draw_Graph(uint8_t is_PNP, float max_ib_uA, uint8_t num_steps, uint8_t is_compare_mode) {
   char buffer[32];
 
   // Tính Max IC để Scale trục Y phù hợp cho cả 2 đồ thị
   float global_max_ic = max_ic_1;
   if (is_compare_mode && max_ic_2 > global_max_ic) {
-    global_max_ic = max_ic_2;
+      global_max_ic = max_ic_2;
   }
 
   float graph_y_max = 50.0f;
-  if (global_max_ic > 50.0f && global_max_ic <= 100.0f)
-    graph_y_max = 100.0f;
-  else if (global_max_ic > 100.0f)
-    graph_y_max = 150.0f;
+  if (global_max_ic > 50.0f && global_max_ic <= 100.0f) graph_y_max = 100.0f;
+  else if (global_max_ic > 100.0f) graph_y_max = 150.0f;
 
   ILI9341_FillScreen(ILI9341_BLACK);
   uint16_t grid_color = ILI9341_COLOR565(60, 60, 60);
@@ -436,40 +384,34 @@ Draw_Graph(uint8_t is_PNP, float max_ib_uA, uint8_t num_steps, uint8_t is_compar
   int loop_count = is_compare_mode ? 2 : 1;
 
   for (int bjt = 1; bjt <= loop_count; bjt++) {
-    uint16_t line_color = (bjt == 1) ? ILI9341_WHITE : ILI9341_YELLOW;
+      uint16_t line_color = (bjt == 1) ? ILI9341_WHITE : ILI9341_YELLOW;
 
-    for (int step = 0; step < num_steps; step++) {
-      int prev_x = ORIGIN_X;
-      int prev_y = ORIGIN_Y;
+      for (int step = 0; step < num_steps; step++) {
+        int prev_x = ORIGIN_X;
+        int prev_y = ORIGIN_Y;
 
-      for (int v_step = 0; v_step < 100; v_step++) {
-        float vce = (bjt == 1) ? vce_data_1[step][v_step] : vce_data_2[step][v_step];
-        float ic = (bjt == 1) ? ic_data_1[step][v_step] : ic_data_2[step][v_step];
+        for (int v_step = 0; v_step < 100; v_step++) {
+          float vce = (bjt == 1) ? vce_data_1[step][v_step] : vce_data_2[step][v_step];
+          float ic = (bjt == 1) ? ic_data_1[step][v_step] : ic_data_2[step][v_step];
 
-        int px = ORIGIN_X + (int)(vce * x_scale);
-        int py = ORIGIN_Y - (int)(ic * y_scale);
+          int px = ORIGIN_X + (int)(vce * x_scale);
+          int py = ORIGIN_Y - (int)(ic * y_scale);
 
-        if (px > 319)
-          px = 319;
-        if (py < 0)
-          py = 0;
+          if (px > 319) px = 319;
+          if (py < 0) py = 0;
 
-        DrawLine(prev_x, prev_y, px, py, line_color);
-        prev_x = px;
-        prev_y = py;
+          DrawLine(prev_x, prev_y, px, py, line_color);
+          prev_x = px;
+          prev_y = py;
 
-        if (v_step == 99 && bjt == 1) { // Chỉ in nhãn uA cho BJT 1 để đỡ rối màn hình
-          sprintf(buffer, "%duA", (int)((step + 1) * ib_step_uA));
-          int label_x = px - 35;
-          if (label_x < 0)
-            label_x = 0;
-          int label_y = py - 12;
-          if (label_y < 0)
-            label_y = 0;
-          ILI9341_WriteString(label_x, label_y, buffer, Font_7x10, ILI9341_GREEN, ILI9341_BLACK);
+          if (v_step == 99 && bjt == 1) { // Chỉ in nhãn uA cho BJT 1 để đỡ rối màn hình
+            sprintf(buffer, "%duA", (int)((step + 1) * ib_step_uA));
+            int label_x = px - 35; if (label_x < 0) label_x = 0;
+            int label_y = py - 12; if (label_y < 0) label_y = 0;
+            ILI9341_WriteString(label_x, label_y, buffer, Font_7x10, ILI9341_GREEN, ILI9341_BLACK);
+          }
         }
       }
-    }
   }
 
   // In thông số Gain
@@ -477,9 +419,10 @@ Draw_Graph(uint8_t is_PNP, float max_ib_uA, uint8_t num_steps, uint8_t is_compar
   ILI9341_WriteString(40, 3, buffer, Font_7x10, ILI9341_WHITE, ILI9341_BLACK);
 
   if (is_compare_mode) {
-    sprintf(buffer, "2. %s Gain=%d", is_PNP ? "PNP" : "NPN", (int)hfe_2);
-    ILI9341_WriteString(180, 3, buffer, Font_7x10, ILI9341_YELLOW, ILI9341_BLACK); // BJT 2 màu vàng
+      sprintf(buffer, "2. %s Gain=%d", is_PNP ? "PNP" : "NPN", (int)hfe_2);
+      ILI9341_WriteString(180, 3, buffer, Font_7x10, ILI9341_YELLOW, ILI9341_BLACK); // BJT 2 màu vàng
   }
+
 }
 /* USER CODE END 0 */
 
@@ -487,9 +430,7 @@ Draw_Graph(uint8_t is_PNP, float max_ib_uA, uint8_t num_steps, uint8_t is_compar
  * @brief The application entry point.
  * @retval int
  */
-int
-main(void)
-{
+int main(void) {
   /* USER CODE BEGIN 1 */
 
   /* USER CODE END 1 */
@@ -531,165 +472,145 @@ main(void)
   /* USER CODE END 2 */
 
   /* Infinite loop */
-  while (1) {
-    /* USER CODE BEGIN WHILE */
+    while (1) {
+      /* USER CODE BEGIN WHILE */
 
-    // ==========================================================
-    // 1. XỬ LÝ VẶN ENCODER
-    // ==========================================================
-    uint16_t current_encoder_val = __HAL_TIM_GET_COUNTER(&htim4);
-    int16_t delta = (int16_t)(current_encoder_val - last_encoder_val);
+      // ==========================================================
+      // 1. XỬ LÝ VẶN ENCODER
+      // ==========================================================
+      uint16_t current_encoder_val = __HAL_TIM_GET_COUNTER(&htim4);
+      int16_t delta = (int16_t)(current_encoder_val - last_encoder_val);
 
-    if (abs(delta) >= 4) {
-      if (current_state == STATE_MENU) {
-        int old_menu_index = menu_index;
-        if (delta > 0)
-          menu_index++;
-        else
-          menu_index--;
+      if (abs(delta) >= 4) {
+          if (current_state == STATE_MENU) {
+              int old_menu_index = menu_index;
+              if (delta > 0) menu_index++;
+              else menu_index--;
 
-        if (menu_index < 0)
-          menu_index = 0;
-        if (menu_index > 4)
-          menu_index = 4;
+              if (menu_index < 0) menu_index = 0;
+              if (menu_index > 4) menu_index = 4;
 
-        last_encoder_val = current_encoder_val;
+              last_encoder_val = current_encoder_val;
 
-        if (old_menu_index != menu_index) {
-          Draw_Menu_Line(old_menu_index, 0);
-          Draw_Menu_Line(menu_index, 1);
-        }
-      } else if (current_state == STATE_PROMPT_SAVE) {
-        // Vặn encoder để đổi giữa Yes/No
-        prompt_selection = !prompt_selection;
-        last_encoder_val = current_encoder_val;
-        Draw_Prompt_Save_Buttons(prompt_selection);
+              if (old_menu_index != menu_index) {
+                  Draw_Menu_Line(old_menu_index, 0);
+                  Draw_Menu_Line(menu_index, 1);
+              }
+          }
+          else if (current_state == STATE_PROMPT_SAVE) {
+              // Vặn encoder để đổi giữa Yes/No
+              prompt_selection = !prompt_selection;
+              last_encoder_val = current_encoder_val;
+              Draw_Prompt_Save_Buttons(prompt_selection);
+          }
+          // Các state khác vặn encoder không có tác dụng, chỉ update giá trị để khỏi trôi
+          else {
+               last_encoder_val = current_encoder_val;
+          }
       }
-      // Các state khác vặn encoder không có tác dụng, chỉ update giá trị để khỏi trôi
-      else {
-        last_encoder_val = current_encoder_val;
-      }
-    }
 
-    // ==========================================================
-    // 2. XỬ LÝ NHẤN NÚT (CHÂN PC0)
-    // ==========================================================
-    if (HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_0) == GPIO_PIN_RESET) {
-      HAL_Delay(50); // Debounce
+      // ==========================================================
+      // 2. XỬ LÝ NHẤN NÚT (CHÂN PC0)
+      // ==========================================================
       if (HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_0) == GPIO_PIN_RESET) {
-        switch (current_state) {
-          case STATE_MENU:
-            if (menu_index == 0)
-              cfg_is_pnp = !cfg_is_pnp;
-            else if (menu_index == 1) {
-              if (cfg_max_ib_uA == 50)
-                cfg_max_ib_uA = 75;
-              else if (cfg_max_ib_uA == 75)
-                cfg_max_ib_uA = 100;
-              else if (cfg_max_ib_uA == 100)
-                cfg_max_ib_uA = 150;
-              else if (cfg_max_ib_uA == 150)
-                cfg_max_ib_uA = 250;
-              else if (cfg_max_ib_uA == 250)
-                cfg_max_ib_uA = 350;
-              else if (cfg_max_ib_uA == 350)
-                cfg_max_ib_uA = 500;
-              else
-                cfg_max_ib_uA = 50;
-            } else if (menu_index == 2) {
-              if (cfg_num_steps == 3)
-                cfg_num_steps = 5;
-              else if (cfg_num_steps == 5)
-                cfg_num_steps = 7;
-              else if (cfg_num_steps == 7)
-                cfg_num_steps = 10;
-              else
-                cfg_num_steps = 3;
-            } else if (menu_index == 3) {
-              if (cfg_max_power == 0.1f)
-                cfg_max_power = 0.25f;
-              else if (cfg_max_power == 0.25f)
-                cfg_max_power = 0.35f;
-              else if (cfg_max_power == 0.35f)
-                cfg_max_power = 0.5f;
-              else
-                cfg_max_power = 0.1f;
-            } else if (menu_index == 4) {
+        HAL_Delay(50);  // Debounce
+        if (HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_0) == GPIO_PIN_RESET) {
+          switch (current_state) {
+            case STATE_MENU:
+              if (menu_index == 0) cfg_is_pnp = !cfg_is_pnp;
+              else if (menu_index == 1) {
+                if (cfg_max_ib_uA == 50) cfg_max_ib_uA = 75;
+                else if (cfg_max_ib_uA == 75) cfg_max_ib_uA = 100;
+                else if (cfg_max_ib_uA == 100) cfg_max_ib_uA = 150;
+                else if (cfg_max_ib_uA == 150) cfg_max_ib_uA = 250;
+                else if (cfg_max_ib_uA == 250) cfg_max_ib_uA = 350;
+                else if (cfg_max_ib_uA == 350) cfg_max_ib_uA = 500;
+                else cfg_max_ib_uA = 50;
+              }
+              else if (menu_index == 2) {
+                if (cfg_num_steps == 3) cfg_num_steps = 5;
+                else if (cfg_num_steps == 5) cfg_num_steps = 7;
+                else if (cfg_num_steps == 7) cfg_num_steps = 10;
+                else cfg_num_steps = 3;
+              }
+              else if (menu_index == 3) {
+                if (cfg_max_power == 0.1f) cfg_max_power = 0.25f;
+                else if (cfg_max_power == 0.25f) cfg_max_power = 0.35f;
+                else if (cfg_max_power == 0.35f) cfg_max_power = 0.5f;
+                else cfg_max_power = 0.1f;
+              }
+              else if (menu_index == 4) {
+                current_state = STATE_SCANNING;
+                ILI9341_FillScreen(ILI9341_BLACK);
+                ILI9341_WriteString(110, 110, "Scanning...", Font_11x18, ILI9341_YELLOW, ILI9341_BLACK);
+
+                // Đo BJT thứ 1 và lưu vào mảng 1
+                Measure_BJT(cfg_is_pnp, cfg_max_ib_uA, cfg_num_steps, 1);
+                // Vẽ đồ thị BJT 1
+                Draw_Graph(cfg_is_pnp, cfg_max_ib_uA, cfg_num_steps, 0);
+                current_state = STATE_SHOW_GRAPH;
+              }
+
+              if (current_state == STATE_MENU) Draw_Menu_Line(menu_index, 1);
+              break;
+
+            case STATE_SHOW_GRAPH:
+              // Đang xem đồ thị 1, bấm nút thì hiện menu hỏi lưu
+              current_state = STATE_PROMPT_SAVE;
+              prompt_selection = 0; // Mặc định là NO
+              Draw_Prompt_Save_BG();
+              Draw_Prompt_Save_Buttons(prompt_selection);
+              break;
+
+            case STATE_PROMPT_SAVE:
+              // Đang ở menu Yes/No, bấm nút để chốt lựa chọn
+              if (prompt_selection == 0) { // Nếu chọn NO
+                  current_state = STATE_MENU;
+                  Draw_Menu_UI();
+              } else {                     // Nếu chọn YES
+                  current_state = STATE_WAIT_BJT2;
+                  Draw_Prompt_InsertBJT2();
+              }
+              break;
+
+            case STATE_WAIT_BJT2:
+              // Đã cắm xong BJT 2, bấm nút để bắt đầu đo
               current_state = STATE_SCANNING;
               ILI9341_FillScreen(ILI9341_BLACK);
               ILI9341_WriteString(110, 110, "Scanning...", Font_11x18, ILI9341_YELLOW, ILI9341_BLACK);
 
-              // Đo BJT thứ 1 và lưu vào mảng 1
-              Measure_BJT(cfg_is_pnp, cfg_max_ib_uA, cfg_num_steps, 1);
-              // Vẽ đồ thị BJT 1
-              Draw_Graph(cfg_is_pnp, cfg_max_ib_uA, cfg_num_steps, 0);
-              current_state = STATE_SHOW_GRAPH;
-            }
+              // Đo BJT thứ 2 và lưu vào mảng 2
+              Measure_BJT(cfg_is_pnp, cfg_max_ib_uA, cfg_num_steps, 2);
+              // Vẽ đồ thị so sánh (BJT1 = Trắng, BJT2 = Vàng)
+              Draw_Graph(cfg_is_pnp, cfg_max_ib_uA, cfg_num_steps, 1);
+              current_state = STATE_SHOW_COMPARE;
+              break;
 
-            if (current_state == STATE_MENU)
-              Draw_Menu_Line(menu_index, 1);
-            break;
-
-          case STATE_SHOW_GRAPH:
-            // Đang xem đồ thị 1, bấm nút thì hiện menu hỏi lưu
-            current_state = STATE_PROMPT_SAVE;
-            prompt_selection = 0; // Mặc định là NO
-            Draw_Prompt_Save_BG();
-            Draw_Prompt_Save_Buttons(prompt_selection);
-            break;
-
-          case STATE_PROMPT_SAVE:
-            // Đang ở menu Yes/No, bấm nút để chốt lựa chọn
-            if (prompt_selection == 0) { // Nếu chọn NO
+            case STATE_SHOW_COMPARE:
+              // Đang xem 2 đồ thị song song, bấm nút để về Menu
               current_state = STATE_MENU;
               Draw_Menu_UI();
-            } else { // Nếu chọn YES
-              current_state = STATE_WAIT_BJT2;
-              Draw_Prompt_InsertBJT2();
-            }
-            break;
+              break;
 
-          case STATE_WAIT_BJT2:
-            // Đã cắm xong BJT 2, bấm nút để bắt đầu đo
-            current_state = STATE_SCANNING;
-            ILI9341_FillScreen(ILI9341_BLACK);
-            ILI9341_WriteString(110, 110, "Scanning...", Font_11x18, ILI9341_YELLOW, ILI9341_BLACK);
+            default:
+            	break;
+          }
 
-            // Đo BJT thứ 2 và lưu vào mảng 2
-            Measure_BJT(cfg_is_pnp, cfg_max_ib_uA, cfg_num_steps, 2);
-            // Vẽ đồ thị so sánh (BJT1 = Trắng, BJT2 = Vàng)
-            Draw_Graph(cfg_is_pnp, cfg_max_ib_uA, cfg_num_steps, 1);
-            current_state = STATE_SHOW_COMPARE;
-            break;
-
-          case STATE_SHOW_COMPARE:
-            // Đang xem 2 đồ thị song song, bấm nút để về Menu
-            current_state = STATE_MENU;
-            Draw_Menu_UI();
-            break;
-
-          default:
-            break;
+          // Chờ nhả phím hoàn toàn
+          while (HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_0) == GPIO_PIN_RESET);
         }
-
-        // Chờ nhả phím hoàn toàn
-        while (HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_0) == GPIO_PIN_RESET)
-          ;
       }
+      /* USER CODE END WHILE */
     }
-    /* USER CODE END WHILE */
-  }
 }
 
 /**
  * @brief System Clock Configuration
  * @retval None
  */
-void
-SystemClock_Config(void)
-{
-  RCC_OscInitTypeDef RCC_OscInitStruct = { 0 };
-  RCC_ClkInitTypeDef RCC_ClkInitStruct = { 0 };
+void SystemClock_Config(void) {
+  RCC_OscInitTypeDef RCC_OscInitStruct = {0};
+  RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
 
   /** Configure the main internal regulator output voltage
    */
@@ -733,9 +654,7 @@ SystemClock_Config(void)
  * @brief This function is executed in case of error occurrence.
  * @retval None
  */
-void
-Error_Handler(void)
-{
+void Error_Handler(void) {
   /* USER CODE BEGIN Error_Handler_Debug */
   __disable_irq();
   while (1) {
@@ -751,8 +670,5 @@ Error_Handler(void)
  * @param line: assert_param error line source number
  * @retval None
  */
-void
-assert_failed(uint8_t* file, uint32_t line)
-{
-}
+void assert_failed(uint8_t *file, uint32_t line) {}
 #endif /* USE_FULL_ASSERT */

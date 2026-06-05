@@ -1,10 +1,17 @@
-13:37:10 **** Incremental Build of configuration Debug for project BJT_Curve_Tracer ****
+14:08:31 **** Incremental Build of configuration Debug for project BJT_Curve_Tracer ****
 make -j12 all 
+arm-none-eabi-gcc "../Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F407xx -c -I../Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -I../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Src/main.d" -MT"Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Src/main.o"
+arm-none-eabi-gcc -o "BJT_Curve_Tracer.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\STM32_Projects\BJT_Curve_Tracer\STM32F407VGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="BJT_Curve_Tracer.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -u _printf_float -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: BJT_Curve_Tracer.elf
+ 
 arm-none-eabi-size  BJT_Curve_Tracer.elf 
+arm-none-eabi-objdump -h -S BJT_Curve_Tracer.elf  > "BJT_Curve_Tracer.list"
    text	   data	    bss	    dec	    hex	filename
-  62784	    736	  32056	  95576	  17558	BJT_Curve_Tracer.elf
+  62720	    736	  32056	  95512	  17518	BJT_Curve_Tracer.elf
 Finished building: default.size.stdout
  
+Finished building: BJT_Curve_Tracer.list
+ 
 
-13:37:10 Build Finished. 0 errors, 0 warnings. (took 308ms)
+14:08:53 Build Finished. 0 errors, 0 warnings. (took 22s.390ms)
 
