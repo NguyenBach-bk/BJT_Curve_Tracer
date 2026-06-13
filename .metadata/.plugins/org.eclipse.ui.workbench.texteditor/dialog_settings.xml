@@ -3,11 +3,20 @@
 	<item key="hasShownOverlayPopupBefore" value="true"/>
 	<item key="replaceBarOpen" value="false"/>
 	<list key="searchhistory">
-		<item value="USB"/>
-		<item value="Draw_Batch_Tab"/>
-		<item value="emun"/>
-		<item value="define"/>
-		<item value="MX"/>
-		<item value="max_ib_uA"/>
+		<item value="1000"/>
+		<item value="1.4"/>
+		<item value="200"/>
+		<item value="v_dac_i_volts"/>
+		<item value="Check_BJT_Short"/>
+		<item value="measure_bjt_Single"/>
+		<item value="measure_bjt"/>
+		<item value="single_point"/>
+		<item value="DAC"/>
+		<item value="typedef enum"/>
+		<item value="index"/>
+		<item value="Measure_BJT"/>
+		<item value="STATE_MENU"/>
+		<item value="is_pnp"/>
+		<item value="uint"/>
 	</list>
 </section>
