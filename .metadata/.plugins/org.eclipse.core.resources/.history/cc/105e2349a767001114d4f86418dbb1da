@@ -436,6 +436,14 @@ Check_BJT_Short(uint8_t is_PNP, float R_pump, float R_shunt)
   HAL_DAC_SetValue(&hdac, DAC_CHANNEL_1, DAC_ALIGN_12B_R, DAC_OFFSET);
   HAL_DAC_SetValue(&hdac, DAC_CHANNEL_2, DAC_ALIGN_12B_R, DAC_OFFSET);
 
+  // Trì hoãn 10ms - Đủ dài để toàn bộ điện dung trên mạch và BJT xả cạn kiệt
+  Delay_us(10000);
+
+  // Đọc nháp ADC 5 lần rồi vứt đi để "súc rửa" các giá trị ảo trong bộ đệm ADC
+  for(int i = 0; i < 5; i++) {
+	  Read_ADC_Channel_Averaged(ADC_CHANNEL_9, 4);
+  }
+
   // Sử dụng một dòng kích nhỏ thích hợp để kiểm tra an toàn
   float ib_test_A = (R_shunt < 1.0f) ? 0.001f : 0.00001f;
   float v_dac_i = 1.65f + (dac_dir * ib_test_A * R_pump);

@@ -63,13 +63,13 @@ int menu_index = 0;
 uint16_t last_encoder_val = 0;
 uint16_t last_encoder2_val = 0;
 
-// Biến test lô
+// Biến Test Lô (Batch)
 float batch_hfe[MAX_BATCH_SIZE];
 uint8_t cfg_batch_size = BATCH_DEFAULT_SIZE;
 uint8_t current_batch_index = 0;
 uint8_t exit_prompt_sel = 0;
 
-// Biến thống kê toàn cục để dùng cho các tab
+// Biến Thống kê toàn cục để dùng cho các Tab
 float batch_mean = 0, batch_std_dev = 0, batch_cv = 0;
 uint8_t batch_outliers = 0;
 uint8_t summary_page = 0;
@@ -205,7 +205,9 @@ Draw_Menu_UI(void)
 void
 Draw_Prompt_Save_BG(void)
 {
+  // Đổi nền hộp thoại sang màu xám (45, 45, 45)
   ILI9341_FillRectangle(40, 80, 240, 100, ILI9341_COLOR565(45, 45, 45));
+  // Đổi màu nền của text trùng khớp với màu nền xám để chống nhòe chữ
   ILI9341_WriteString(70, 95, "Save for compare?", Font_11x18, ILI9341_WHITE, ILI9341_COLOR565(45, 45, 45));
 }
 
@@ -230,7 +232,7 @@ Draw_Prompt_InsertBJT2(void)
 }
 
 // ==========================================================
-// 3. GIAO DIỆN ĐO LÔ
+// 3. GIAO DIỆN BATCH TEST
 // ==========================================================
 void
 Update_Batch_Config_Value(void)
@@ -283,6 +285,7 @@ Draw_Batch_Running_BG(void)
 void
 Draw_Prompt_Exit_BG(void)
 {
+  // Đổi nền hộp thoại hủy sang màu xám chung
   ILI9341_FillRectangle(40, 80, 240, 100, ILI9341_COLOR565(45, 45, 45));
   DrawRectFrame(40, 80, 240, 100, ILI9341_WHITE);
   ILI9341_WriteString(80, 95, "Abort Batch?", Font_11x18, ILI9341_WHITE, ILI9341_COLOR565(45, 45, 45));
@@ -433,22 +436,19 @@ Check_BJT_Short(uint8_t is_PNP, float R_pump, float R_shunt)
 {
   int dac_dir = is_PNP ? -1 : 1;
 
-  HAL_DAC_SetValue(&hdac, DAC_CHANNEL_1, DAC_ALIGN_12B_R, DAC_OFFSET);
-  HAL_DAC_SetValue(&hdac, DAC_CHANNEL_2, DAC_ALIGN_12B_R, DAC_OFFSET);
-
   // Sử dụng một dòng kích nhỏ thích hợp để kiểm tra an toàn
   float ib_test_A = (R_shunt < 1.0f) ? 0.001f : 0.00001f;
   float v_dac_i = 1.65f + (dac_dir * ib_test_A * R_pump);
 
-  // Áp dụng áp Vce thử nghiệm thấp ~1V để dò dòng ngắn mạch
-  int32_t dac1_val = DAC_OFFSET + (dac_dir * 248);
+  // Áp dụng áp Vce thử nghiệm thấp: ~1V để dò dòng ngắn mạch
+  int32_t dac1_val = DAC_OFFSET + (dac_dir * 1200);
   uint32_t dac2_val = (uint32_t)((v_dac_i / 3.3f) * 4095.0f);
 
-  HAL_DAC_SetValue(&hdac, DAC_CHANNEL_1, DAC_ALIGN_12B_R, dac1_val);
   HAL_DAC_SetValue(&hdac, DAC_CHANNEL_2, DAC_ALIGN_12B_R, dac2_val);
-  Delay_us(2000);
+  HAL_DAC_SetValue(&hdac, DAC_CHANNEL_1, DAC_ALIGN_12B_R, dac1_val);
+  Delay_us(500);
 
-  uint32_t adc_ve = Read_ADC_Channel_Averaged(ADC_CHANNEL_9, 64);
+  uint32_t adc_ve = Read_ADC_Channel_Averaged(ADC_CHANNEL_9, 32);
 
   // Lập tức ngắt xung đưa về Mass ảo để bảo vệ linh kiện
   HAL_DAC_SetValue(&hdac, DAC_CHANNEL_1, DAC_ALIGN_12B_R, DAC_OFFSET);
@@ -457,7 +457,7 @@ Check_BJT_Short(uint8_t is_PNP, float R_pump, float R_shunt)
   float v_e_phys = 1.65f - (((float)adc_ve / 4095.0f) * 3.3f);
   float ic_test_mA = fabs(v_e_phys) / R_shunt * 1000.0f;
 
-  float short_limit_mA = (R_shunt < 1.0f) ? 1500.0f : 50.0f;
+  float short_limit_mA = (R_shunt < 1.0f) ? 1000.0f : 50.0f;
 
   if (ic_test_mA > short_limit_mA)
 	  return 1; // Chập mạch
@@ -504,7 +504,7 @@ Measure_BJT_Single_Point(uint8_t is_PNP, float target_ib_uA)
   if (dac2_val > 4095) dac2_val = 4095;
 
   // Ép áp Vce bão hòa dải tuyến tính (Vce ~ 4V tương ứng bước quét trung tâm số 50)
-  int32_t dac1_val = DAC_OFFSET + (dac_direction * (50 * 21));
+  int32_t dac1_val = DAC_OFFSET + (dac_direction * (50 * 25));
   if (dac1_val > 4095) dac1_val = 4095;
   if (dac1_val < 0)    dac1_val = 0;
 
@@ -522,7 +522,7 @@ Measure_BJT_Single_Point(uint8_t is_PNP, float target_ib_uA)
   HAL_DAC_SetValue(&hdac, DAC_CHANNEL_2, DAC_ALIGN_12B_R, DAC_OFFSET);
 
   HAL_GPIO_WritePin(GPIOE, GPIO_PIN_7 | GPIO_PIN_9, GPIO_PIN_RESET); // Nhả Relay đưa mạch về trạng thái nghỉ an toàn
-  HAL_Delay(30); // Chờ Relay nhả ra ổn định trước khi xử lý toán học
+  HAL_Delay(10); // Chờ Relay nhả ra ổn định trước khi xử lý toán học
 
   // ====================================================================
   // BƯỚC 4: QUY ĐỔI GIÁ TRỊ VẬT LÝ VÀ TRẢ VỀ KẾT QUẢ HFE CHÍNH XÁC
@@ -583,7 +583,7 @@ Measure_BJT(uint8_t is_PNP, float max_ib_uA, uint8_t num_steps, uint8_t bjt_inde
 
   float current_pump_res = cfg_is_power ? 33.0f : 3300.0f;
   float current_shunt_res = cfg_is_power ? 0.1f : 10.0f;
-  float max_ic_limit = cfg_is_power ? 4800.0f : 150.0f; // OCP 4.8A hoặc 150mA
+  float max_ic_limit = cfg_is_power ? 4800.0f : 500.0f; // OCP 4.8A hoặc 500mA
 
   // 2. BẢO VỆ PHẦN CỨNG: KIỂM TRA SỰ CỐ CHẬP CHÂN E-C TRƯỚC KHI QUÉT ĐỒ THỊ
   if (Check_BJT_Short(is_PNP, current_pump_res, current_shunt_res)) {
@@ -628,7 +628,7 @@ Measure_BJT(uint8_t is_PNP, float max_ib_uA, uint8_t num_steps, uint8_t bjt_inde
       dac2_val = 4095;
 
     for (int v_step = 0; v_step < 100; v_step++) {
-      uint32_t delta_dac_v = v_step * 21;
+      uint32_t delta_dac_v = v_step * 25;
       int32_t dac1_val = DAC_OFFSET + (dac_dir * delta_dac_v);
       if (dac1_val > 4095)
         dac1_val = 4095;

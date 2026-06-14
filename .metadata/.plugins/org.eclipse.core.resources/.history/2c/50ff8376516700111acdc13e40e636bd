@@ -436,6 +436,8 @@ Check_BJT_Short(uint8_t is_PNP, float R_pump, float R_shunt)
   HAL_DAC_SetValue(&hdac, DAC_CHANNEL_1, DAC_ALIGN_12B_R, DAC_OFFSET);
   HAL_DAC_SetValue(&hdac, DAC_CHANNEL_2, DAC_ALIGN_12B_R, DAC_OFFSET);
 
+  Delay_us(10000);
+
   // Sử dụng một dòng kích nhỏ thích hợp để kiểm tra an toàn
   float ib_test_A = (R_shunt < 1.0f) ? 0.001f : 0.00001f;
   float v_dac_i = 1.65f + (dac_dir * ib_test_A * R_pump);
